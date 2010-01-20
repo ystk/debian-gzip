@@ -290,6 +290,15 @@ will descend into the directory and compress all the files it finds there
 .I gunzip
 ).
 .TP
+.B --rsyncable
+While compressing, synchronize the output occasionally based on the input.
+This increases size by less than 1 percent most cases, but means that the
+.BR rsync (1)
+program can much more efficiently synchronize files compressed with this flag.
+.I gunzip
+cannot tell the difference between a compressed file created with this option,
+and one created without it.
+.TP
 .B \-S .suf   --suffix .suf
 Use suffix .suf instead of .gz. Any suffix can be given, but suffixes
 other than .z and .gz should be avoided to avoid confusion when files

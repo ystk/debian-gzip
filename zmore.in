@@ -55,7 +55,7 @@ if test $# = 0; then
     if test -t 0; then
 	echo "$usage"
     else
-	gzip -cdfq | eval ${PAGER-more}
+	gzip -cdfq | eval more
     fi
 else
     FIRST=1
@@ -79,7 +79,7 @@ else
 	fi
 	if test "$ANS" != 's'; then
 		echo "------> $FILE <------"
-		gzip -cdfq -- "$FILE" | eval ${PAGER-more}
+		gzip -cdfq -- "$FILE" | more
 	fi
 	if test -t 1; then
 		FIRST=0

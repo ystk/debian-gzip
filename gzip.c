@@ -231,6 +231,31 @@ int  ofd;                  /* output file descriptor */
 unsigned insize;           /* valid bytes in inbuf */
 unsigned inptr;            /* index of next byte to be processed in inbuf */
 unsigned outcnt;           /* bytes in output buffer */
+int rsync = 0;             /* make ryncable chunks */
+
+static int handled_sig[] =
+  {
+    /* SIGINT must be first, as 'foreground' depends on it.  */
+    SIGINT
+
+#ifdef SIGHUP
+    , SIGHUP
+#endif
+#ifdef SIGPIPE
+    , SIGPIPE
+#else
+# define SIGPIPE 0
+#endif
+#ifdef SIGTERM
+    , SIGTERM
+#endif
+#ifdef SIGXCPU
+    , SIGXCPU
+#endif
+#ifdef SIGXFSZ
+    , SIGXFSZ
+#endif
+  };
 
 struct option longopts[] =
 {
@@ -260,6 +285,7 @@ struct option longopts[] =
     {"best",       0, 0, '9'}, /* compress better */
     {"lzw",        0, 0, 'Z'}, /* make output compatible with old compress */
     {"bits",       1, 0, 'b'}, /* max number of bits per code (implies -Z) */
+    {"rsyncable",  0, 0, 'R'}, /* make rsync-friendly archive */
     { 0, 0, 0, 0 }
 };
 
@@ -341,6 +367,7 @@ local void help()
  "  -Z, --lzw         produce output compatible with old compress",
  "  -b, --bits=BITS   max number of bits per code (implies -Z)",
 #endif
+ "    --rsyncable   Make rsync-friendly archive",
  "",
  "With no FILE, or when FILE is -, read standard input.",
  "",
@@ -468,7 +495,9 @@ int main (argc, argv)
 #else
 	    recursive = 1;
 #endif
-	    break;
+	case 'R':
+	    rsync = 1; break;
+
 	case 'S':
 #ifdef NO_MULTIPLE_DOTS
             if (*optarg == '.') optarg++;
@@ -1273,7 +1302,7 @@ local int get_method(in)
 	}
 	if ((flags & CONTINUATION) != 0) {
 	    fprintf(stderr,
-		    "%s: %s is a a multi-part gzip file -- not supported\n",
+		    "%s: %s is a multi-part gzip file -- not supported\n",
 		    program_name, ifname);
 	    exit_code = ERROR;
 	    if (force <= 1) return -1;
@@ -1637,7 +1666,7 @@ local void copy_stat(ifstat)
 	}
       }
 
-    if (futimens (ofd, ofname, timespec) != 0)
+    if (gz_futimens (ofd, ofname, timespec) != 0)
       {
 	int e = errno;
 	WARN ((stderr, "%s: ", program_name));
@@ -1755,30 +1784,7 @@ local void treat_dir (fd, dir)
 static void
 install_signal_handlers ()
 {
-  static int sig[] =
-    {
-      /* SIGINT must be first, as 'foreground' depends on it.  */
-      SIGINT
-
-#ifdef SIGHUP
-      , SIGHUP
-#endif
-#ifdef SIGPIPE
-      , SIGPIPE
-#else
-# define SIGPIPE 0
-#endif
-#ifdef SIGTERM
-      , SIGTERM
-#endif
-#ifdef SIGXCPU
-      , SIGXCPU
-#endif
-#ifdef SIGXFSZ
-      , SIGXFSZ
-#endif
-    };
-  int nsigs = sizeof sig / sizeof sig[0];
+  int nsigs = sizeof handled_sig / sizeof handled_sig[0];
   int i;
 
 #if SA_NOCLDSTOP
@@ -1787,9 +1793,9 @@ install_signal_handlers ()
   sigemptyset (&caught_signals);
   for (i = 0; i < nsigs; i++)
     {
-      sigaction (sig[i], NULL, &act);
+      sigaction (handled_sig[i], NULL, &act);
       if (act.sa_handler != SIG_IGN)
-	sigaddset (&caught_signals, sig[i]);
+	sigaddset (&caught_signals, handled_sig[i]);
     }
 
   act.sa_handler = abort_gzip_signal;
@@ -1797,20 +1803,20 @@ install_signal_handlers ()
   act.sa_flags = 0;
 
   for (i = 0; i < nsigs; i++)
-    if (sigismember (&caught_signals, sig[i]))
+    if (sigismember (&caught_signals, handled_sig[i]))
       {
 	if (i == 0)
 	  foreground = 1;
-	sigaction (sig[i], &act, NULL);
+	sigaction (handled_sig[i], &act, NULL);
       }
 #else
   for (i = 0; i < nsigs; i++)
-    if (signal (sig[i], SIG_IGN) != SIG_IGN)
+    if (signal (handled_sig[i], SIG_IGN) != SIG_IGN)
       {
 	if (i == 0)
 	  foreground = 1;
-	signal (sig[i], abort_gzip_signal);
-	siginterrupt (sig[i], 1);
+	signal (handled_sig[i], abort_gzip_signal);
+	siginterrupt (handled_sig[i], 1);
       }
 #endif
 }
