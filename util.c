@@ -1,12 +1,12 @@
 /* util.c -- utility functions for gzip support
 
-   Copyright (C) 1997, 1998, 1999, 2001, 2002, 2006 Free Software
+   Copyright (C) 1997-1999, 2001-2002, 2006, 2009-2012 Free Software
    Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,61 +18,50 @@
    along with this program; if not, write to the Free Software Foundation,
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
-#ifdef RCSID
-static char rcsid[] = "$Id: util.c,v 1.6 2006/12/11 18:54:39 eggert Exp $";
-#endif
-
 #include <config.h>
 #include <ctype.h>
 #include <errno.h>
 
 #include "tailor.h"
 
-#ifdef HAVE_LIMITS_H
-#  include <limits.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#  include <unistd.h>
-#endif
-#ifdef HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
-
-#if defined STDC_HEADERS || defined HAVE_STDLIB_H
-#  include <stdlib.h>
-#else
-   extern int errno;
-#endif
+#include <limits.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include "gzip.h"
-#include "crypt.h"
 #include <xalloc.h>
 
 #ifndef CHAR_BIT
 #  define CHAR_BIT 8
 #endif
 
-static int write_buffer OF((int, voidp, unsigned int));
+static int write_buffer (int, voidp, unsigned int);
 
-extern ulg crc_32_tab[];   /* crc table, defined below */
+static const ulg crc_32_tab[];   /* crc table, defined below */
 
 /* ===========================================================================
  * Copy input to output unchanged: zcat == cat with --force.
- * IN assertion: insize bytes have already been read in inbuf.
+ * IN assertion: insize bytes have already been read in inbuf and inptr bytes
+ * already processed or copied.
  */
 int copy(in, out)
     int in, out;   /* input and output file descriptors */
 {
+    int got;
+
     errno = 0;
-    while (insize != 0 && (int)insize != -1) {
-	write_buf(out, (char*)inbuf, insize);
-	bytes_out += insize;
-	insize = read_buffer (in, (char *) inbuf, INBUFSIZ);
+    while (insize > inptr) {
+        write_buf(out, (char*)inbuf + inptr, insize - inptr);
+        bytes_out += insize - inptr;
+        got = read_buffer (in, (char *) inbuf, INBUFSIZ);
+        if (got == -1)
+            read_error();
+        bytes_in += got;
+        insize = (unsigned)got;
+        inptr = 0;
     }
-    if ((int)insize == -1) {
-	read_error();
-    }
-    bytes_in = bytes_out;
     return OK;
 }
 
@@ -90,9 +79,9 @@ ulg updcrc(s, n)
     static ulg crc = (ulg)0xffffffffL; /* shift register contents */
 
     if (s == NULL) {
-	c = 0xffffffffL;
+        c = 0xffffffffL;
     } else {
-	c = crc;
+        c = crc;
         if (n) do {
             c = crc_32_tab[((int)c ^ (*s++)) & 0xff] ^ (c >> 8);
         } while (--n);
@@ -122,20 +111,20 @@ int fill_inbuf(eof_ok)
     /* Read as much as possible */
     insize = 0;
     do {
-	len = read_buffer (ifd, (char *) inbuf + insize, INBUFSIZ - insize);
-	if (len == 0) break;
-	if (len == -1) {
-	  read_error();
-	  break;
-	}
-	insize += len;
+        len = read_buffer (ifd, (char *) inbuf + insize, INBUFSIZ - insize);
+        if (len == 0) break;
+        if (len == -1) {
+          read_error();
+          break;
+        }
+        insize += len;
     } while (insize < INBUFSIZ);
 
     if (insize == 0) {
-	if (eof_ok) return EOF;
-	flush_window();
-	errno = 0;
-	read_error();
+        if (eof_ok) return EOF;
+        flush_window();
+        errno = 0;
+        read_error();
     }
     bytes_in += (off_t)insize;
     inptr = 1;
@@ -150,10 +139,8 @@ read_buffer (fd, buf, cnt)
      voidp buf;
      unsigned int cnt;
 {
-#ifdef SSIZE_MAX
-  if (SSIZE_MAX < cnt)
-    cnt = SSIZE_MAX;
-#endif
+  if (INT_MAX < cnt)
+    cnt = INT_MAX;
   return read (fd, buf, cnt);
 }
 
@@ -164,10 +151,8 @@ write_buffer (fd, buf, cnt)
      voidp buf;
      unsigned int cnt;
 {
-#ifdef SSIZE_MAX
-  if (SSIZE_MAX < cnt)
-    cnt = SSIZE_MAX;
-#endif
+  if (INT_MAX < cnt)
+    cnt = INT_MAX;
   return write (fd, buf, cnt);
 }
 
@@ -194,7 +179,7 @@ void flush_window()
     updcrc(window, outcnt);
 
     if (!test) {
-	write_buf(ofd, (char *)window, outcnt);
+        write_buf(ofd, (char *)window, outcnt);
     }
     bytes_out += (off_t)outcnt;
     outcnt = 0;
@@ -212,11 +197,11 @@ void write_buf(fd, buf, cnt)
     unsigned  n;
 
     while ((n = write_buffer (fd, buf, cnt)) != cnt) {
-	if (n == (unsigned)(-1)) {
-	    write_error();
-	}
-	cnt -= n;
-	buf = (voidp)((char*)buf+n);
+        if (n == (unsigned)(-1)) {
+            write_error();
+        }
+        cnt -= n;
+        buf = (voidp)((char*)buf+n);
     }
 }
 
@@ -270,10 +255,10 @@ int xunlink (filename)
     {
       int e = errno;
       if (chmod (filename, S_IWUSR) != 0)
-	{
-	  errno = e;
-	  return -1;
-	}
+        {
+          errno = e;
+          return -1;
+        }
 
       r = unlink (filename);
     }
@@ -301,59 +286,6 @@ void make_simple_name(name)
     } while (p != name);
 }
 
-
-#if !defined HAVE_STRING_H && !defined STDC_HEADERS
-
-/* Provide missing strspn and strcspn functions. */
-
-#  ifndef __STDC__
-#    define const
-#  endif
-
-int strspn  OF((const char *s, const char *accept));
-int strcspn OF((const char *s, const char *reject));
-
-/* ========================================================================
- * Return the length of the maximum initial segment
- * of s which contains only characters in accept.
- */
-int strspn(s, accept)
-    const char *s;
-    const char *accept;
-{
-    register const char *p;
-    register const char *a;
-    register int count = 0;
-
-    for (p = s; *p != '\0'; ++p) {
-	for (a = accept; *a != '\0'; ++a) {
-	    if (*p == *a) break;
-	}
-	if (*a == '\0') return count;
-	++count;
-    }
-    return count;
-}
-
-/* ========================================================================
- * Return the length of the maximum inital segment of s
- * which contains no characters from reject.
- */
-int strcspn(s, reject)
-    const char *s;
-    const char *reject;
-{
-    register int count = 0;
-
-    while (*s != '\0') {
-	if (strchr(reject, *s++) != NULL) return count;
-	++count;
-    }
-    return count;
-}
-
-#endif
-
 /* ========================================================================
  * Add an environment variable (if any) before argv, and update argc.
  * Return the expanded environment variable to be freed later, or NULL
@@ -361,38 +293,39 @@ int strcspn(s, reject)
  */
 #define SEPARATOR	" \t"	/* separators in env variable */
 
-char *add_envopt(argcp, argvp, env)
-    int *argcp;          /* pointer to argc */
-    char ***argvp;       /* pointer to argv */
-    char *env;           /* name of environment variable */
+char *add_envopt(
+    int *argcp,          /* pointer to argc */
+    char ***argvp,       /* pointer to argv */
+    char const *envvar_name) /* name of environment variable */
 {
     char *p;             /* running pointer through env variable */
     char **oargv;        /* runs through old argv array */
     char **nargv;        /* runs through new argv array */
     int	 oargc = *argcp; /* old argc */
     int  nargc = 0;      /* number of arguments in env variable */
+    char *env_val;
 
-    env = (char*)getenv(env);
-    if (env == NULL) return NULL;
+    env_val = getenv(envvar_name);
+    if (env_val == NULL) return NULL;
 
-    env = xstrdup (env);
+    env_val = xstrdup (env_val);
 
-    for (p = env; *p; nargc++ ) {            /* move through env */
-	p += strspn(p, SEPARATOR);	     /* skip leading separators */
-	if (*p == '\0') break;
+    for (p = env_val; *p; nargc++ ) {        /* move through env_val */
+        p += strspn(p, SEPARATOR);	     /* skip leading separators */
+        if (*p == '\0') break;
 
-	p += strcspn(p, SEPARATOR);	     /* find end of word */
-	if (*p) *p++ = '\0';		     /* mark it */
+        p += strcspn(p, SEPARATOR);	     /* find end of word */
+        if (*p) *p++ = '\0';		     /* mark it */
     }
     if (nargc == 0) {
-	free(env);
-	return NULL;
+        free(env_val);
+        return NULL;
     }
     *argcp += nargc;
     /* Allocate the new argv array, with an extra element just in case
      * the original arg list did not end with a NULL.
      */
-    nargv = (char **) xcalloc (*argcp + 1, sizeof (char *));
+    nargv = xcalloc (*argcp + 1, sizeof (char *));
     oargv  = *argvp;
     *argvp = nargv;
 
@@ -402,24 +335,23 @@ char *add_envopt(argcp, argvp, env)
     *(nargv++) = *(oargv++);
 
     /* Then copy the environment args */
-    for (p = env; nargc > 0; nargc--) {
-	p += strspn(p, SEPARATOR);	     /* skip separators */
-	*(nargv++) = p;			     /* store start */
-	while (*p++) ;			     /* skip over word */
+    for (p = env_val; nargc > 0; nargc--) {
+        p += strspn(p, SEPARATOR);	     /* skip separators */
+        *(nargv++) = p;			     /* store start */
+        while (*p++) ;			     /* skip over word */
     }
 
     /* Finally copy the old args and add a NULL (usual convention) */
     while (oargc--) *(nargv++) = *(oargv++);
     *nargv = NULL;
-    return env;
+    return env_val;
 }
 
 /* ========================================================================
  * Error handlers.
  */
 void
-gzip_error (m)
-    char *m;
+gzip_error (char const *m)
 {
     fprintf (stderr, "\n%s: %s: %s\n", program_name, ifname, m);
     abort_gzip();
@@ -432,8 +364,7 @@ xalloc_die ()
   abort_gzip ();
 }
 
-void warning (m)
-    char *m;
+void warning (char const *m)
 {
     WARN ((stderr, "%s: %s: warning: %s\n", program_name, ifname, m));
 }
@@ -443,10 +374,10 @@ void read_error()
     int e = errno;
     fprintf (stderr, "\n%s: ", program_name);
     if (e != 0) {
-	errno = e;
-	perror(ifname);
+        errno = e;
+        perror(ifname);
     } else {
-	fprintf(stderr, "%s: unexpected end of file\n", ifname);
+        fprintf(stderr, "%s: unexpected end of file\n", ifname);
     }
     abort_gzip();
 }
@@ -485,29 +416,29 @@ void fprint_off(file, offset, width)
 
     /* Don't negate offset here; it might overflow.  */
     if (offset < 0) {
-	do
-	  *--p = '0' - offset % 10;
-	while ((offset /= 10) != 0);
+        do
+          *--p = '0' - offset % 10;
+        while ((offset /= 10) != 0);
 
-	*--p = '-';
+        *--p = '-';
     } else {
-	do
-	  *--p = '0' + offset % 10;
-	while ((offset /= 10) != 0);
+        do
+          *--p = '0' + offset % 10;
+        while ((offset /= 10) != 0);
     }
 
     width -= buf + sizeof buf - p;
     while (0 < width--) {
-	putc (' ', file);
+        putc (' ', file);
     }
     for (;  p < buf + sizeof buf;  p++)
-	putc (*p, file);
+        putc (*p, file);
 }
 
 /* ========================================================================
  * Table of CRC-32's of all single-byte values (made by makecrc.c)
  */
-ulg crc_32_tab[] = {
+static const ulg crc_32_tab[] = {
   0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
   0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
   0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,

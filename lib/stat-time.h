@@ -1,11 +1,11 @@
 /* stat-related time functions.
 
-   Copyright (C) 2005, 2007 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007, 2009-2012 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,8 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert.  */
 
@@ -94,6 +93,8 @@ get_stat_birthtime_ns (struct stat const *st)
 # elif defined HAVE_STRUCT_STAT_ST_BIRTHTIMENSEC
   return STAT_TIMESPEC_NS (st, st_birthtim);
 # else
+  /* Avoid a "parameter unused" warning.  */
+  (void) st;
   return 0;
 # endif
 }
@@ -141,7 +142,7 @@ get_stat_mtime (struct stat const *st)
 }
 
 /* Return *ST's birth time, if available; otherwise return a value
-   with negative tv_nsec.  */
+   with tv_sec and tv_nsec both equal to -1.  */
 static inline struct timespec
 get_stat_birthtime (struct stat const *st)
 {
@@ -154,15 +155,17 @@ get_stat_birthtime (struct stat const *st)
   t.tv_sec = st->st_birthtime;
   t.tv_nsec = st->st_birthtimensec;
 #elif (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-  /* Woe32 native platforms (but not Cygwin) put the "file creation
+  /* Native Windows platforms (but not Cygwin) put the "file creation
      time" in st_ctime (!).  See
      <http://msdn2.microsoft.com/de-de/library/14h5k7ff(VS.80).aspx>.  */
   t.tv_sec = st->st_ctime;
   t.tv_nsec = 0;
 #else
-  /* Birth time is not supported.  Set tv_sec to avoid undefined behavior.  */
+  /* Birth time is not supported.  */
   t.tv_sec = -1;
   t.tv_nsec = -1;
+  /* Avoid a "parameter unused" warning.  */
+  (void) st;
 #endif
 
 #if (defined HAVE_STRUCT_STAT_ST_BIRTHTIMESPEC_TV_NSEC \
@@ -172,10 +175,12 @@ get_stat_birthtime (struct stat const *st)
      using zero.  Attempt to work around this problem.  Alas, this can
      report failure even for valid time stamps.  Also, NetBSD
      sometimes returns junk in the birth time fields; work around this
-     bug if it it is detected.  There's no need to detect negative
-     tv_nsec junk as negative tv_nsec already indicates an error.  */
-  if (t.tv_sec == 0 || 1000000000 <= t.tv_nsec)
-    t.tv_nsec = -1;
+     bug if it is detected.  */
+  if (! (t.tv_sec && 0 <= t.tv_nsec && t.tv_nsec < 1000000000))
+    {
+      t.tv_sec = -1;
+      t.tv_nsec = -1;
+    }
 #endif
 
   return t;
