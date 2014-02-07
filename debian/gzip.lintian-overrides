@@ -4,3 +4,4 @@ gzip: package-contains-hardlink bin/zcmp
 gzip: package-contains-hardlink bin/zegrep
 gzip: package-contains-hardlink bin/zfgrep
 gzip: package-contains-hardlink bin/uncompress
+gzip: executable-not-elf-or-script bin/uncompress

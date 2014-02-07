@@ -1,3 +1,62 @@
+gzip (1.5-1.1) unstable; urgency=low
+
+  * Non-maintainer upload with permission of maintainer.
+  * Clean up the debian/rules file to fix FTBFS caused by
+    inclusion of build-indep on binary-arch target.
+
+ -- Thorsten Glaser <tg@mirbsd.de>  Wed, 20 Jun 2012 16:10:12 +0200
+
+gzip (1.5-1) unstable; urgency=low
+
+  * new upstream version, with updated gnulib that closes: #669434
+  * patch to restore zgrep -h from Pär-Ola Nilsson, closes: #658734
+  * patch to fix pack reference in gzip man page from Stéphane Aulery,
+    closes: #308522
+  * patch to add --rsyncable doc to info page from Jörgen Grahn,
+    closes: #637626
+  * patch to improve zdiff doc from Stéphane Aulery, closes: #269612
+  * patches to fix RFC URLs from Stéphane Aulery, closes: #636182
+
+ -- Bdale Garbee <bdale@gag.com>  Tue, 19 Jun 2012 14:04:08 -0600
+
+gzip (1.4-5) unstable; urgency=low
+
+  * patch from upstream to address determinism issue, closes: #647522
+
+ -- Bdale Garbee <bdale@gag.com>  Mon, 19 Mar 2012 11:07:22 +0100
+
+gzip (1.4-4) unstable; urgency=low
+
+  * enable hardening build flags, closes: #664499
+
+ -- Bdale Garbee <bdale@gag.com>  Sun, 18 Mar 2012 20:16:45 +0100
+
+gzip (1.4-3) unstable; urgency=low
+
+  * patch from upstream for sys_stat.in.h to fix mingw32 builds, 
+    closes: #653960
+
+ -- Bdale Garbee <bdale@gag.com>  Mon, 05 Mar 2012 22:13:33 -0700
+
+gzip (1.4-2) unstable; urgency=low
+
+  * patch to use DEB_HOST_ARCH in rules, closes: #644785
+  * fix missing stamp creating in rules file causing extra build cycle,
+    closes: #648555
+
+ -- Bdale Garbee <bdale@gag.com>  Sat, 12 Nov 2011 17:24:17 -0700
+
+gzip (1.4-1) unstable; urgency=low
+
+  * new upstream version, closes: #627121, #633927
+  * add Vcs entries to control file
+  * patch zless LESSOPEN definition to allow handling of gunzip data on STDIN,
+    closes: #248302
+  * Build using mingw-w64 instead of mingw32, closes: #623428
+  * update to current policy, source package formats, etc
+
+ -- Bdale Garbee <bdale@gag.com>  Wed, 20 Apr 2011 01:48:46 -0600
+
 gzip (1.3.12-9) unstable; urgency=high
 
   * fix applied for CVE-2010-0001 which identified an integer underflow when 

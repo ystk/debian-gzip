@@ -1,11 +1,11 @@
 /* trees.c -- output deflated data using Huffman coding
 
-   Copyright (C) 1997, 1998, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1997-1999, 2009-2012 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -59,23 +59,18 @@
  *      void ct_tally (int dist, int lc);
  *          Save the match info and tally the frequency counts.
  *
- *      off_t flush_block (char *buf, ulg stored_len, int pad, int eof)
+ *      off_t flush_block (char *buf, ulg stored_len, int eof)
  *          Determine the best encoding for the current block: dynamic trees,
  *          static trees or store, and output the encoded block to the zip
- *          file. If pad is set, pads the block to the next
- *          byte. Returns the total compressed length for the file so
- *          far.
- * */
+ *          file. Returns the total compressed length for the file so far.
+ *
+ */
 
 #include <config.h>
 #include <ctype.h>
 
 #include "tailor.h"
 #include "gzip.h"
-
-#ifdef RCSID
-static char rcsid[] = "$Id: trees.c,v 1.4 2006/11/20 08:40:33 eggert Exp $";
-#endif
 
 /* ===========================================================================
  * Constants
@@ -291,8 +286,8 @@ local off_t compressed_len; /* total bit length of compressed file */
 local off_t input_len;      /* total byte length of input file */
 /* input_len is for debugging only since we can get it by other means. */
 
-ush *file_type;        /* pointer to UNKNOWN, BINARY or ASCII */
-int *file_method;      /* pointer to DEFLATE or STORE */
+static ush *file_type;        /* pointer to UNKNOWN, BINARY or ASCII */
+static int *file_method;      /* pointer to DEFLATE or STORE */
 
 #ifdef DEBUG
 extern off_t bits_sent;  /* bit length of the compressed data */
@@ -305,17 +300,17 @@ extern unsigned near strstart; /* window offset of current string */
  * Local (static) routines in this file.
  */
 
-local void init_block     OF((void));
-local void pqdownheap     OF((ct_data near *tree, int k));
-local void gen_bitlen     OF((tree_desc near *desc));
-local void gen_codes      OF((ct_data near *tree, int max_code));
-local void build_tree     OF((tree_desc near *desc));
-local void scan_tree      OF((ct_data near *tree, int max_code));
-local void send_tree      OF((ct_data near *tree, int max_code));
-local int  build_bl_tree  OF((void));
-local void send_all_trees OF((int lcodes, int dcodes, int blcodes));
-local void compress_block OF((ct_data near *ltree, ct_data near *dtree));
-local void set_file_type  OF((void));
+local void init_block     (void);
+local void pqdownheap     (ct_data near *tree, int k);
+local void gen_bitlen     (tree_desc near *desc);
+local void gen_codes      (ct_data near *tree, int max_code);
+local void build_tree     (tree_desc near *desc);
+local void scan_tree      (ct_data near *tree, int max_code);
+local void send_tree      (ct_data near *tree, int max_code);
+local int  build_bl_tree  (void);
+local void send_all_trees (int lcodes, int dcodes, int blcodes);
+local void compress_block (ct_data near *ltree, ct_data near *dtree);
+local void set_file_type  (void);
 
 
 #ifndef DEBUG
@@ -861,10 +856,9 @@ local void send_all_trees(lcodes, dcodes, blcodes)
  * trees or store, and output the encoded block to the zip file. This function
  * returns the total compressed length for the file so far.
  */
-off_t flush_block(buf, stored_len, pad, eof)
+off_t flush_block(buf, stored_len, eof)
     char *buf;        /* input block, or NULL if too old */
     ulg stored_len;   /* length of input block */
-    int pad;          /* pad output to byte boundary */
     int eof;          /* true if this is the last block for a file */
 {
     ulg opt_lenb, static_lenb; /* opt_len and static_len in bytes */
@@ -911,8 +905,8 @@ off_t flush_block(buf, stored_len, pad, eof)
     if (stored_len <= opt_lenb && eof && compressed_len == 0L && seekable()) {
 #endif
         /* Since LIT_BUFSIZE <= 2*WSIZE, the input data must be there: */
-	if (!buf)
-	  gzip_error ("block vanished");
+        if (!buf)
+          gzip_error ("block vanished");
 
         copy_block(buf, (unsigned)stored_len, 0); /* without header */
         compressed_len = stored_len << 3;
@@ -957,10 +951,6 @@ off_t flush_block(buf, stored_len, pad, eof)
         Assert (input_len == bytes_in, "bad input size");
         bi_windup();
         compressed_len += 7;  /* align on byte boundary */
-    } else if (pad && (compressed_len % 8) != 0) {
-        send_bits((STORED_BLOCK<<1)+eof, 3);  /* send block type */
-        compressed_len = (compressed_len + 3 + 7) & ~7L;
-        copy_block(buf, 0, 1); /* with header */
     }
 
     return compressed_len >> 3;

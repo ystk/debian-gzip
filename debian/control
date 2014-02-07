@@ -3,14 +3,17 @@ Section: utils
 Priority: required
 Maintainer: Bdale Garbee <bdale@gag.com>
 Uploaders: Carl Worth <cworth@cworth.org>
-Build-Depends: debhelper (>= 5), texinfo
-Build-Depends-Indep: mingw32
-Standards-Version: 3.8.0
+Build-Depends: debhelper (>= 5), texinfo, autoconf, automake, autotools-dev, less
+Build-Depends-Indep: mingw-w64
+Standards-Version: 3.9.3
+Vcs-Git: git://git.gag.com/debian/gzip
+Vcs-Browser: http://git.gag.com/?p=debian/gzip
 
 Package: gzip
 Architecture: any
-Pre-Depends: ${shlibs:Depends}
 Essential: yes
+Pre-Depends: ${shlibs:Depends}
+Depends: dpkg (>= 1.15.4) | install-info
 Suggests: less
 Description: GNU compression utilities
  This package provides the standard GNU file compression utilities, which 
@@ -22,6 +25,6 @@ Package: gzip-win32
 Architecture: all
 Priority: extra
 Suggests: wine
-Description: The GNU compression utility (win32 build)
+Description: GNU compression utility (win32 build)
  This is a win32 version of gzip, meant to be used by the win32-loader
  component of Debian-Installer.
