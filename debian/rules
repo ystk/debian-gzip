@@ -156,6 +156,7 @@ binary-arch: build-stamp
 	ln -s gunzip.1.gz debian/gzip/usr/share/man/man1/uncompress.1.gz
 	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zegrep.1.gz
 	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zfgrep.1.gz
+	rm -f ${_topdir}/debian/gzip/usr/share/info/dir.gz
 	dh_fixperms -s
 	dh_makeshlibs -s
 	dh_installdeb -s

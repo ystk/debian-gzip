@@ -5,7 +5,7 @@ Maintainer: Bdale Garbee <bdale@gag.com>
 Uploaders: Carl Worth <cworth@cworth.org>
 Build-Depends: debhelper (>= 5), texinfo, autoconf, automake, autotools-dev, less
 Build-Depends-Indep: mingw-w64
-Standards-Version: 3.9.3
+Standards-Version: 3.9.5
 Vcs-Git: git://git.gag.com/debian/gzip
 Vcs-Browser: http://git.gag.com/?p=debian/gzip
 

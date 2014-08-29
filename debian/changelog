@@ -1,3 +1,26 @@
+gzip (1.6-3) unstable; urgency=low
+
+  * add a comment to the lintian overrides explaining them
+  * updated rsyncable patch from Alexander Inyukhin, closesL #708423
+  * never include dir.gz in package, closes: #720917
+
+ -- Bdale Garbee <bdale@gag.com>  Wed, 25 Dec 2013 16:09:40 -0700
+
+gzip (1.6-2) unstable; urgency=low
+
+  * patch to update included gnulib for mingw-w64 changes, closes: #713950
+
+ -- Bdale Garbee <bdale@gag.com>  Sat, 17 Aug 2013 14:22:53 +0200
+
+gzip (1.6-1) unstable; urgency=low
+
+  * new upstream version, closes: #704689, #690583, #521432, #96195, #693463
+  * merge diff from 1.5-1.1 NMU by Thorsten Glaser
+  * patch for zgrep man page from Regid Ichira, closes: #687123
+  * restore rsyncable docs to man page, closes: #688305
+
+ -- Bdale Garbee <bdale@gag.com>  Tue, 11 Jun 2013 12:49:33 -0600
+
 gzip (1.5-1.1) unstable; urgency=low
 
   * Non-maintainer upload with permission of maintainer.
