@@ -79,7 +79,7 @@ configure-stamp: reconf-stamp
 	mkdir -p builddir
 	cd builddir && env \
 	    $(foreach i,CC CFLAGS CPPFLAGS LDFLAGS,$(call shellexport,$i)) \
-	    ../configure ${CONFIGURE_ARGS}
+	    CONFIG_SHELL=/bin/sh ../configure ${CONFIGURE_ARGS}
 	:>$@
 
 configure-indep: configure-indep-stamp
