@@ -80,6 +80,10 @@ configure-stamp: reconf-stamp
 	cd builddir && env \
 	    $(foreach i,CC CFLAGS CPPFLAGS LDFLAGS,$(call shellexport,$i)) \
 	    CONFIG_SHELL=/bin/sh ../configure ${CONFIGURE_ARGS}
+	# chmod'ing tests/zgrep-abuse because this is being added
+	# explicitly via d/p/CVE-2022-1271.patch and so doesn't have
+	# the executable permission.
+	chmod +x tests/zgrep-abuse
 	:>$@
 
 configure-indep: configure-indep-stamp

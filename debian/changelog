@@ -1,3 +1,11 @@
+gzip (1.6-4+deb8u1) jessie-security; urgency=high
+
+  * Non-maintainer upload by the ELTS team.
+  * Add patch to avoid exploit via multi-newline file
+    namesfix. (Fixes: CVE-2022-1271) (Closes: #1009168)
+
+ -- Utkarsh Gupta <utkarsh@debian.org>  Sun, 10 Apr 2022 18:13:16 +0530
+
 gzip (1.6-4) unstable; urgency=low
 
   * fix typo in man page, closes: #738546
